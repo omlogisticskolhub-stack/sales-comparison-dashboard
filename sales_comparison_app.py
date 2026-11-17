@@ -1,7 +1,7 @@
-import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+import streamlit as st
 
 # Page Configuration
 st.set_page_config(
@@ -42,36 +42,44 @@ if not check_password():
     st.stop()
 
 # ==========================================
-# 🎨 DASHBOARD STYLING
+# 🎨 PROFESSIONAL DASHBOARD STYLING
 # ==========================================
 st.markdown(
     """
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
-    html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+    html, body, [class*="css"] { font-family: 'Inter', sans-serif; color: #0f172a; }
     .stApp { background-color: #f8fafc; }
+    
     .hub-header {
-        background: linear-gradient(90deg, #b91c1c 0%, #dc2626 100%);
+        background: linear-gradient(135deg, #b91c1c 0%, #dc2626 100%);
         padding: 20px 28px;
         border-radius: 12px;
         color: white;
         margin-bottom: 24px;
         box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2);
     }
-    .hub-title { font-size: 24px; font-weight: 900; margin: 0; }
-    .hub-sub { font-size: 13px; opacity: 0.9; margin-top: 4px; }
+    .hub-title { font-size: 22px; font-weight: 900; margin: 0; letter-spacing: -0.5px; }
+    .hub-sub { font-size: 13px; opacity: 0.95; margin-top: 4px; font-weight: 500; }
+    
     div[data-testid="stMetric"] {
         background-color: #ffffff !important;
-        border: 1px solid #cbd5e1 !important;
+        border: 1px solid #e2e8f0 !important;
         border-radius: 10px !important;
         padding: 14px 16px !important;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.04) !important;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important;
     }
+    div[data-testid="stMetricValue"] {
+        font-size: 20px !important;
+        font-weight: 800 !important;
+        color: #0f172a !important;
+    }
+    
     .section-head {
-        font-size: 18px;
+        font-size: 16px;
         font-weight: 800;
         color: #0f172a;
-        margin-top: 10px;
+        margin-top: 15px;
         margin-bottom: 12px;
         padding-bottom: 6px;
         border-bottom: 3px solid #dc2626;
@@ -133,13 +141,17 @@ def process_sales_file(uploaded_file):
 
     return merged, available_modes
 
-def format_wt(kg):
-    if abs(kg) >= 1000:
+def format_wt_clean(kg):
+    if abs(kg) >= 1000000:
+        return f"{kg / 1000000:,.2f} MT"
+    elif abs(kg) >= 1000:
         return f"{kg / 1000:,.2f} Ton"
     return f"{kg:,.1f} KG"
 
-def format_amt(val):
-    if abs(val) >= 100000:
+def format_amt_clean(val):
+    if abs(val) >= 10000000:
+        return f"₹ {val / 10000000:,.2f} Cr"
+    elif abs(val) >= 100000:
         return f"₹ {val / 100000:,.2f} L"
     return f"₹ {val:,.0f}"
 
@@ -240,37 +252,45 @@ if st.session_state["df_p1"] is not None:
     st.markdown(f"<div class='section-head'>📌 Overall Performance Summary ({selected_mode})</div>", unsafe_allow_html=True)
 
     k1, k2, k3, k4, k5, k6 = st.columns(6)
-    k1.metric(f"⚖️ {p1_label} Weight", format_wt(tot_wt_p1))
-    k2.metric(f"⚖️ {p2_label} Weight", format_wt(tot_wt_p2) if has_p2 else "Waiting...", delta=f"{diff_wt/1000:+,.2f} Ton ({pct_wt:+.1f}%)" if has_p2 else None)
+    k1.metric(f"⚖️ {p1_label} Weight", format_wt_clean(tot_wt_p1))
+    k2.metric(f"⚖️ {p2_label} Weight", format_wt_clean(tot_wt_p2) if has_p2 else "Waiting...", delta=f"{diff_wt/1000:+,.2f} Ton ({pct_wt:+.1f}%)" if has_p2 else None)
     k3.metric("📉 Weight Variance", f"{diff_wt:+,.1f} KG" if has_p2 else "-")
 
-    k4.metric(f"💰 {p1_label} Sales", format_amt(tot_amt_p1))
-    k5.metric(f"💰 {p2_label} Sales", format_amt(tot_amt_p2) if has_p2 else "Waiting...", delta=f"₹ {diff_amt:+,.0f} ({pct_amt:+.1f}%)" if has_p2 else None)
+    k4.metric(f"💰 {p1_label} Sales", format_amt_clean(tot_amt_p1))
+    k5.metric(f"💰 {p2_label} Sales", format_amt_clean(tot_amt_p2) if has_p2 else "Waiting...", delta=f"₹ {diff_amt:+,.0f} ({pct_amt:+.1f}%)" if has_p2 else None)
     k6.metric("📉 Sales Variance", f"₹ {diff_amt:+,.0f}" if has_p2 else "-")
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # Charts
+    # Charts with Professional Plotly Layout (Fixed K/M clutter)
     c_chart1, c_chart2 = st.columns(2)
     chart_df = filtered.groupby(["BRANCH_CODE", "BRANCH_NAME"], as_index=False)[[wt_p1_col, wt_p2_col, amt_p1_col, amt_p2_col]].sum().sort_values(by=wt_p1_col, ascending=False).head(12)
     chart_df["Branch"] = chart_df["BRANCH_CODE"].astype(str) + "-" + chart_df["BRANCH_NAME"].str[:12]
 
     with c_chart1:
-        st.markdown("<div class='section-head'>⚖️ Branch Weight Comparison (KG)</div>", unsafe_allow_html=True)
+        st.markdown("<div class='section-head'>⚖️ Branch Weight Comparison</div>", unsafe_allow_html=True)
         fig_wt = go.Figure()
-        fig_wt.add_trace(go.Bar(name=p1_label, x=chart_df["Branch"], y=chart_df[wt_p1_col], marker_color="#64748b"))
+        fig_wt.add_trace(go.Bar(name=p1_label, x=chart_df["Branch"], y=chart_df[wt_p1_col], marker_color="#475569"))
         if has_p2:
             fig_wt.add_trace(go.Bar(name=p2_label, x=chart_df["Branch"], y=chart_df[wt_p2_col], marker_color="#dc2626"))
-        fig_wt.update_layout(barmode="group", height=340, margin=dict(l=0, r=0, t=20, b=0), paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
+        fig_wt.update_layout(
+            barmode="group", height=360, margin=dict(l=10, r=10, t=20, b=40),
+            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+        )
         st.plotly_chart(fig_wt, use_container_width=True)
 
     with c_chart2:
-        st.markdown("<div class='section-head'>💰 Branch Sales Amount Comparison (₹)</div>", unsafe_allow_html=True)
+        st.markdown("<div class='section-head'>💰 Branch Sales Amount Comparison</div>", unsafe_allow_html=True)
         fig_amt = go.Figure()
         fig_amt.add_trace(go.Bar(name=p1_label, x=chart_df["Branch"], y=chart_df[amt_p1_col], marker_color="#0284c7"))
         if has_p2:
             fig_amt.add_trace(go.Bar(name=p2_label, x=chart_df["Branch"], y=chart_df[amt_p2_col], marker_color="#16a34a"))
-        fig_amt.update_layout(barmode="group", height=340, margin=dict(l=0, r=0, t=20, b=0), paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
+        fig_amt.update_layout(
+            barmode="group", height=360, margin=dict(l=10, r=10, t=20, b=40),
+            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+        )
         st.plotly_chart(fig_amt, use_container_width=True)
 
     st.markdown("<br>", unsafe_allow_html=True)

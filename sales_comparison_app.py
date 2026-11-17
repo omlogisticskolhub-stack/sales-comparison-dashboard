@@ -248,21 +248,36 @@ if st.session_state["df_p1"] is not None:
     diff_amt = tot_amt_p2 - tot_amt_p1
     pct_amt = ((diff_amt / tot_amt_p1) * 100) if tot_amt_p1 > 0 else 0.0
 
-    # KPI Summary
+    # KPI Summary with Correct Delta Color Logic
     st.markdown(f"<div class='section-head'>📌 Overall Performance Summary ({selected_mode})</div>", unsafe_allow_html=True)
 
     k1, k2, k3, k4, k5, k6 = st.columns(6)
     k1.metric(f"⚖️ {p1_label} Weight", format_wt_clean(tot_wt_p1))
-    k2.metric(f"⚖️ {p2_label} Weight", format_wt_clean(tot_wt_p2) if has_p2 else "Waiting...", delta=f"{diff_wt/1000:+,.2f} Ton ({pct_wt:+.1f}%)" if has_p2 else None)
+    
+    # Correct delta color: normal means positive=green, negative=red (inverse=False)
+    wt_delta_color = "normal" if diff_wt >= 0 else "inverse"
+    k2.metric(
+        f"⚖️ {p2_label} Weight", 
+        format_wt_clean(tot_wt_p2) if has_p2 else "Waiting...", 
+        delta=f"{diff_wt/1000:+,.2f} Ton ({pct_wt:+.1f}%)" if has_p2 else None,
+        delta_color=wt_delta_color
+    )
     k3.metric("📉 Weight Variance", f"{diff_wt:+,.1f} KG" if has_p2 else "-")
 
     k4.metric(f"💰 {p1_label} Sales", format_amt_clean(tot_amt_p1))
-    k5.metric(f"💰 {p2_label} Sales", format_amt_clean(tot_amt_p2) if has_p2 else "Waiting...", delta=f"₹ {diff_amt:+,.0f} ({pct_amt:+.1f}%)" if has_p2 else None)
+    
+    amt_delta_color = "normal" if diff_amt >= 0 else "inverse"
+    k5.metric(
+        f"💰 {p2_label} Sales", 
+        format_amt_clean(tot_amt_p2) if has_p2 else "Waiting...", 
+        delta=f"₹ {diff_amt:+,.0f} ({pct_amt:+.1f}%)" if has_p2 else None,
+        delta_color=amt_delta_color
+    )
     k6.metric("📉 Sales Variance", f"₹ {diff_amt:+,.0f}" if has_p2 else "-")
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # Charts with Professional Plotly Layout (Fixed K/M clutter)
+    # Charts
     c_chart1, c_chart2 = st.columns(2)
     chart_df = filtered.groupby(["BRANCH_CODE", "BRANCH_NAME"], as_index=False)[[wt_p1_col, wt_p2_col, amt_p1_col, amt_p2_col]].sum().sort_values(by=wt_p1_col, ascending=False).head(12)
     chart_df["Branch"] = chart_df["BRANCH_CODE"].astype(str) + "-" + chart_df["BRANCH_NAME"].str[:12]
